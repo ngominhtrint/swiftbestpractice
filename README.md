@@ -440,3 +440,471 @@ To repeat, the attribute `@noescape` does two main things:
 
 1. It avoids us needing to write an explicit `self` in the closure.
 2. If we try to assign a completion block to a property, the compiler won’t allow us to do that because `@noclosure` says the block can’t be assigned. Otherwise, we would face a potentially serious memory leak.
+
+## How to use protocol extensions to bind model classes with interfaces?
+
+Sometimes you have to bind the same kind of objects with multiple views, like UIViewController, UITableViewCell, or UICollectionViewCell. Very often, the binding code is quite similar in all the views, so it would be a great idea if you can reuse it. We will use Swift protocol and protocol extensions to do it.
+
+Let’s suppose we have a `User` class:
+
+```
+class User {
+    var name = ""
+    var email = ""
+    var bio = ""
+    var image: UIImage? = nil
+    
+    init(name: String, email: String, bio: String) {
+        self.name = name
+        self.email = email
+        self.bio = bio
+    }
+}
+```
+
+We will create a protocol which will adopt all the interfaces that we want to bind with our `User`instances. We will call it `UserBindable`.
+
+```
+protocol UserBindable: AnyObject {
+    var user: User? { get set }
+    
+    var nameLabel: UILabel! { get }
+    var emailLabel: UILabel! { get }
+    var bioLabel: UILabel! { get }
+    var imageView: UIImageView! { get }
+}
+```
+
+The first var `user` is the user to bind, and all the others are `UIView` subclasses that we can use to bind the user.
+
+Then, we create a protocol extension:
+
+```
+extension UserBindable {
+    
+    // Make the views optionals
+        
+    var nameLabel: UILabel! {
+        return nil
+    }
+    
+    var emailLabel: UILabel! {
+        return nil
+    }
+    
+    var bioLabel: UILabel! {
+        return nil
+    }
+    
+    var imageView: UIImageView! {
+        return nil
+    }
+    
+    // Bind
+    
+    func bind(user: User) {
+        self.user = user
+        bind()
+    }
+    
+    func bind() {
+        
+        guard let user = self.user else {
+            return
+        }
+    
+        if let nameLabel = self.nameLabel {
+            nameLabel.text = user.name
+        }
+        
+        if let bioLabel = self.bioLabel {
+            bioLabel.text = user.bio
+        }
+        
+        if let emailLabel = self.emailLabel {
+            emailLabel.text = user.email
+        }
+        
+        if let imageView = self.imageView {
+            imageView.image = user.image
+        }
+    }
+}
+```
+
+Here, we split the extension into two sections:
+
+The first one is used to provide a default value (nil) for all views, so the objects that will implement the protocol won’t need to have all of them. For instance, some of our views could exclude the `image`, but some others can include it.
+
+We take the values of the user properties and set them to views.
+
+Now, most of the job is done. If we have to present a user list, we will want to create a `UITableViewCell`. Let`s imagine that this cell just needs to show the name and the email:
+
+```
+class UserTableViewCell: UITableViewCell, UserBindable {
+
+    var user: User?
+    
+    // we can set the labels in interface builder or with by code. 
+    @IBOutlet weak var nameLabel: UILabel!
+    @IBOutlet weak var emailLabel: UILabel!
+}
+```
+
+And that’s all. Our cell implements `UserBindable`, so it knows how to bind its interface to a user object. In our `UITableViewDataSource` we can do:
+
+```
+    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCellWithIdentifier("Cell") as! UserTableViewCell
+        let user = // find the user from your array or whatever
+        cell.bind(user)
+        return cell
+    }
+```
+
+If we want to show the detail of this user after touching it, we can have a view controller like this:
+
+```
+class UserDetailViewController: UIViewController, UserBindable {
+    
+    var user: User?
+    
+    @IBOutlet weak var nameLabel: UILabel!
+    @IBOutlet weak var emailLabel: UILabel!
+    @IBOutlet weak var bioLabel: UILabel!
+    @IBOutlet weak var imageView: UIImageView!
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+	 // here we suppose that we have set the user value before the viewDidLoad
+        bind()
+    }
+}
+```
+
+## How to force highlight TODO and FIXME in Swift?
+
+In the old days of **Objective-C**, it was very easy to force warnings that let us know when one piece of code needs a fix or some additional work. We just had to write:
+
+```
+#warning TODO: Finish implementation
+- (void) foo {
+}
+```
+
+In **Swift**, we have lost the ability to force warnings to remind us to do these kind of things. However, we have another features that allows us to mark something as **TODO** or **FIXME**:
+
+```
+// TODO: Please, finish implementation
+func foo() {
+}
+
+// FIXME: Please, fix it always crashes!
+func bar() {
+    let array: [String] = []
+    array[1]
+}
+```
+
+The downside of these tags is that they are not highlighted by the compiler. We can see them on the method dropdown box in **Xcode**, but they are forgotten easily.
+
+A workaround to make the compiler complain about these marks is to just add the following script as a new _Build Phase_:
+
+```
+# Set this var a false if you prefer to include your cocoa pods warnings
+EXCLUDEPODS=true
+
+# Add the tags you want to mark as warnings  and or errors
+WARNINGTAGS="TODO:|FIXME:|WARNING:"
+ERRORTAG="ERROR:"
+
+if $EXCLUDEPODS; then PODSTRING="-path ./Pods -prune"; else PODSTRING=""; fi
+
+find "${SRCROOT}" $PODSTRING \( -name "*.h" -or -name "*.m" -or -name "*.swift" \) -print0 | xargs -0 egrep --with-filename --line-number --only-matching "($WARNINGTAGS).*\$|($ERRORTAG).*\$" | perl -p -e "s/($WARNINGTAGS)/ warning: 🛠 \$1/" | perl -p -e "s/($ERRORTAG)/ error: 😱 \$1/"
+```
+
+After adding this, the build phase tags **TODO** and **FIXME** are treated by the compiler as warnings. Moreover, we can have two more added tags to force a warning or even an error:
+
+```
+// WARNING: Something is wrong here
+// ERROR: Something is really wrong here
+```
+
+It is important to notice that the **ERROR** tag won’t make the build fail, but it will be marked in read as tagged as an error.
+
+## How to create protocols with optional methods or properties?
+
+Populating tables is one of the most common activities in iOS. TableView’s DataSource contains many methods you can implement; however, did you notice that DataSource has only two required methods?
+
+UIKit uses an old way to achieve optional methods, using Objective-C style. However, there is certainly a better approach using an elegant code. Compounding multiple features together like extensions and computed properties will help us to avoid implementing all protocol’s methods and properties
+
+Implementing required protocols is straightforward:
+
+```
+CommentDelegate {
+    func didSubmitComment()
+    func didRemoveComment()
+    var isSingleComment: Bool { get }
+}
+
+class A: RequiredCommentDelegate {
+    func didSubmitComment() {
+        // implementation
+    }
+    func didRemoveComment() {
+        // implementation
+    }
+    var isSingleComment = true
+}
+```
+
+Class A has to implement two methods and a boolean property. They are all mandatory, otherwise a compiler will warn you. If we are not interested in `didRemoveComment()` method, we can omit a body of the method, but class A must contain at least a declaration. It is not necessarily a huge problem, but imagine a complex project with many other methods and dependencies. Having a transparent and structured code is beneficial for testing and can help us to avoid further errors.
+
+Let’s have a look on the more _swifty_ way how to accomplish optional methods and properties in pure Swift.
+
+Our new protocol will look like the previous one:
+
+```
+protocol OptionalCommentDelegate {
+    func didSubmitComment()
+    func didRemoveComment()
+    var isSingleComment: Bool { get }
+}
+```
+
+Now, the power of extensions comes to the action. Creating extensions over the protocols will deliver the desired effect. For methods it’s quite straight:
+
+```
+extension OptionalCommentDelegate {
+    func didSubmitComment() { }
+    func didRemoveComment() { }
+}
+```
+
+Implementing methods and variables with an empty body will make them optional. So simple, right? However, properties and extensions behave differently. Our first assumption would be to implement property like this:
+
+```
+extension OptionalCommentDelegate {
+    var isSingleComment = true
+}
+```
+
+After writing these lines of codes, the compiler will tell us: “Extensions may not contain stores properties.” In other words, we can’t create properties and assign them values in extensions.
+
+Going deeper and experimenting with the properties, we find out that there is a simple trick how to avoid the mentioned error - using Computed properties.
+
+```
+extension OptionalCommentDelegate {
+    var isSingleComment: Bool {
+        return false
+    }
+}
+```
+
+Every time we call `isSingleComment`, it will execute the body of the property, which is in this case `return false`. For those who are not familiar with computed properties and their shortcuts, we can rewrite the code to:
+
+```
+extension OptionalCommentDelegate {
+    var isSingleComment: Bool {
+        get {
+            return false
+        }
+    }
+}
+```
+
+Now `isSingleComment` is an optional property in a protocol.
+
+## How to avoid a retain cycle?
+
+Retaining cycles are one of the most dangerous mistakes programmers can make, as these cycles can lead to unexpected crashes and huge memory consumption. There are multiple ways to tackle well-known retain cycle issues.
+
+Imagine the following code:
+
+```
+class Object {
+    func doStuff(completion: (() -> Void)?) {
+        completion?()
+    }
+}
+
+class Controller: UIViewController {
+    let object = Object()
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        object.doStuff {
+            self.update()
+        }
+    }
+    
+    func update() {
+        // implementation
+    }
+}
+```
+
+In our case, method `update()` causes retaining because the closure is capturing self as a strong reference to it. Our first assumption is to make a weak copy of `self` in the closure.
+
+```
+ override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        object.doStuff { [weak self] in
+            self?.update()
+        }
+    }
+```
+
+Why is `weak self` inside the square brackets? As it implies, it is an array of objects you can put inside brackets to specify multiple capture values in a closure. The solution above could be sufficient, but let’s dive into an even more _swifty_ solution. If it’s possible to write code better, you should always do it.
+
+Swift 2.0 introduced a new statement, `guard`, to simplify a code structure and to finally get rid of scary pyramids of IF-statements. Embracing the power of guards inside closures can rapidly enhance our lives and set a smart convention in programming.
+
+```
+override func viewDidLoad() {
+    super.viewDidLoad()
+    
+    object.doStuff { [weak self] in
+        guard let aSelf = self else { return }
+        aSelf.update()
+    }
+}
+```
+
+The guard statement was used to protect `self`, not to be `nil`, and if so a code won’t continue in the closure. Using a local variable `aSelf` will ensure that there will be no retain cycle.
+
+A syntax sugar in the end - wouldn’t it be great to use just `self` instead of `aSelf`? Yes, it would. Using back quotes together with a guard statement can lead to the code below:
+
+```
+guard let `self` = self else { return }
+```
+
+To summarize:
+
+```
+object.doStuff { [weak self] in
+    guard let `self` = self else { return }
+    self.update()
+}
+```
+
+I use this in almost every closure to avoid potential retain cycle. There are some exceptions when you don’t have to use `[weak self]`, like in the following example:
+
+```
+UIView.animateWithDuration(1) { 
+    self.update()
+}
+```
+
+Why isn’t it necessary to take care of retain cycles in the example above? The closure will be destroyed automatically after execution, and the most important object where `animateWithDuration` is called does not retain the block.
+
+## How to use font awesome in Swift?
+
+Today, icons are used on every website you can imagine. What if you want to use Font Awesome icons in your Swift project? Importing new font requires adding a property into `info.plist`, but the most annoying part is to match the correct Unicode code point with a symbol in the font file. We would have to know that `symbol` is encoded to `f042` hexadecimal number. It is quite challenging and cumbersome to know all hexadecimal numbers. Not to mention, the result would look like this:
+
+```
+label.text = "\u{f037}"
+```
+
+There is certainly a better way how to add icons to labels or buttons. Wouldn’t it be better to use simply the words that are already predefined and which describe icons we want to add as a text, like FAArrows or FACog?
+
+[Font Awesome Swift](https://github.com/Vaberer/Font-Awesome-Swift) library is designed exactly for these purposes. A very elegant solution comes with this lightweight library:
+
+```
+label.FAIcon = .FATwitter
+```
+
+Compounding icons with additional text can be straightforward as well:
+
+```
+label.setFAText(prefixText: "prefix ", icon: .FATwitter, postfixText: " prefix", size: 30, iconSize: 20)
+```
+
+Have you noticed the adjusting size of text and icon in one string? `NSAttributedStrings` is the core that runs Font Awesome Swift library behind the scenes.
+
+## Why access control matters?
+
+Swift gives us the option to write multiple classes in one file without taking care of headers like in Objective-C. In other words, every property in `.h` file means it is visible from outside the class, or to put it simply - it’s public. In Swift, all properties and methods are internal. They are accessible from their defining module, but not in any source file outside of that module.
+
+```
+class A {
+    var myVariable1 = true
+    internal var myVariable2 = true
+}
+
+```
+
+Both properties have the same access control, and we can omit this attribute. They are accessible from outside, but other frameworks can’t access the properties, like libraries added via CocoaPods. Even if the variables are public, they still are not visible because the `class A` is marked as `internal` by default. We would have to write explicitly `public class A { }` to reveal it publicly. By contrast, a private access control can be accessed only from inside the class, so debugging can be much easier because there is no outside factor to change the behavior of the class.
+
+My convention is to mark everything private, and then expose only those parts of which you are aware that they have to be changed from outside. The more private properties and methods, the better for you. On the contrary, creating pods requires a caution of where to add public attributes and where to not. Without marking them public, your pod won’t be usable.
+
+```
+class A {    
+    public var myVariable = true
+}
+```
+
+The code above doesn’t make sense. It’s great that we revealed `myVariable` property, but other modules can’t access the class at all. Don’t worry, a compiler will warn us: “Declaring a public var for an internal class”. Adding public in the front of `class A` will solve the problem. However, what about unit testing and access control?
+
+In general, all classes which are not marked as public, can’t be seen by other modules, and testing targets belong to different modules as well. Just imagine the disaster when everything has to be marked as public for unit tests. Keep in mind, this was a reality before Swift 2.0. Now, Swift provides an attribute `@testable` to avoid this behavior.
+
+Attribute `@testable import MyProject` will unveil internal properties and methods in unit test classes. Just remember those private properties won’t be visible from outside to other modules. If you need to have access to private properties, consider to decouple a code or think about the architecture of code. It’s a sign that your code isn’t designed for testing. The test driven development would point out this problem much sooner.
+
+## How to leverage Swift to match enums?
+
+An enumeration defines a common type for a group of related values which are logically connected:
+
+```
+enum Goods {
+    case Bread
+    case Roll
+}
+let myGoods: Goods = .Bread
+```
+
+We encapsulate `Bread` and `Roll` into one entity, `Goods`. Matching simple enums are evident because it’s a standard comparison.
+
+```
+if myGoods == .Bread {
+    // matched
+}
+```
+
+However, it is sometimes useful to be able to store extra information about other types together with these case values and allow this information to be altered at any time later. Swift calls this feature Associated Values.
+
+For example, let’s suppose to have all stuff stored in one property with extra information about how many pieces an inventory has. In Swift, the enumeration to define stuff can look like this:
+
+```
+enum Stuff {
+    case Chair(amount: Int)
+    case Table(amount: Int)
+}
+let myStuff: Stuff = .Chair(amount: 10)
+```
+
+Extracting associated values can be done via the switch or special IF-statement. Regular IF-condition doesn’t work with associated enums.
+
+```
+if myStuff == .Chair(amount: _) {
+    // implementation
+}
+```
+
+Instead, we use a new enhanced IF-statement and extra information, the amount that is now extracted.
+
+```
+if case let .Chair(amount: amount) = myStuff {
+    print(amount)
+}
+```
+
+There are cases when we are not interested in an associated value. A shorter version would be:
+
+```
+if case .Chair(amount: _) = myStuff {
+    // implementation
+}
+```
+
+
