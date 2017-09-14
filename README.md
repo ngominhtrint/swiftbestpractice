@@ -82,6 +82,7 @@ let userProfileViewController = UIStoryboard.loadUserProfileViewController()
 
 If your codebase is large and you have lots of storyboards in there, then a solution like this can help you better organize your code.
 
+[Back to table content](https://github.com/ngominhtrint/swiftbestpractice#table-content)
 
 ## How to hide long UIView loading syntax from the UINib
 
@@ -125,6 +126,8 @@ Now creating of that view looks like the following code:
 ```
 let avatarViewFromNib = UINib.loadAvatarView(withOwner: self)
 ```
+
+[Back to table content](https://github.com/ngominhtrint/swiftbestpractice#table-content)
 
 ## Use extensions to better organize your code
 
@@ -252,6 +255,8 @@ extension MyViewController {
 
 **Final hint:** If an extension contains a lot of code, consider separating that extension into a separate .swift file.
 
+[Back to table content](https://github.com/ngominhtrint/swiftbestpractice#table-content)
+
 ## Consider using the GUARD statement to check for required conditions
 
 Why should you use the guard statement when you can use the if-else statement? Let’s consider the following two examples:
@@ -316,6 +321,8 @@ guard (value >= 0 && value == 200 && value <= 300) else {
 You can see how the `guard` statement is much easier and more natural for people to read than its `if-else` statement counterpart.
 
 An additional reason to use the `guard` statement is that an optional variable will be unwrapped if it passes the guard statement. When using the `if-else` statement, we need to unwrap it by ourselves.
+
+[Back to table content](https://github.com/ngominhtrint/swiftbestpractice#table-content)
 
 ## How to properly use NSDateFormatter?
 
@@ -391,6 +398,8 @@ let string = "06/17/2016"
 let date = NSDate(string: string, formatter: .dayMonthAndYear)
 ```
 
+[Back to table content](https://github.com/ngominhtrint/swiftbestpractice#table-content)
+
 ## How to avoid scope in Closure?
 
 There are many situations in Swift development where we use closures. For example, when we are making calls to the server, a closure may be called as a callback, either with a success or failure block. In most cases, delegates are substituted with closures as well. It is also worth mentioning that Apple’s new API methods prefer closures as well.
@@ -456,6 +465,8 @@ To repeat, the attribute `@noescape` does two main things:
 
 1. It avoids us needing to write an explicit `self` in the closure.
 2. If we try to assign a completion block to a property, the compiler won’t allow us to do that because `@noclosure` says the block can’t be assigned. Otherwise, we would face a potentially serious memory leak.
+
+[Back to table content](https://github.com/ngominhtrint/swiftbestpractice#table-content)
 
 ## How to use protocol extensions to bind model classes with interfaces?
 
@@ -598,6 +609,8 @@ class UserDetailViewController: UIViewController, UserBindable {
 }
 ```
 
+[Back to table content](https://github.com/ngominhtrint/swiftbestpractice#table-content)
+
 ## How to force highlight TODO and FIXME in Swift?
 
 In the old days of **Objective-C**, it was very easy to force warnings that let us know when one piece of code needs a fix or some additional work. We just had to write:
@@ -647,6 +660,8 @@ After adding this, the build phase tags **TODO** and **FIXME** are treated by th
 ```
 
 It is important to notice that the **ERROR** tag won’t make the build fail, but it will be marked in read as tagged as an error.
+
+[Back to table content](https://github.com/ngominhtrint/swiftbestpractice#table-content)
 
 ## How to create protocols with optional methods or properties?
 
@@ -730,6 +745,8 @@ extension OptionalCommentDelegate {
 ```
 
 Now `isSingleComment` is an optional property in a protocol.
+
+[Back to table content](https://github.com/ngominhtrint/swiftbestpractice#table-content)
 
 ## How to avoid a retain cycle?
 
@@ -815,6 +832,8 @@ UIView.animateWithDuration(1) {
 
 Why isn’t it necessary to take care of retain cycles in the example above? The closure will be destroyed automatically after execution, and the most important object where `animateWithDuration` is called does not retain the block.
 
+[Back to table content](https://github.com/ngominhtrint/swiftbestpractice#table-content)
+
 ## How to use font awesome in Swift?
 
 Today, icons are used on every website you can imagine. What if you want to use Font Awesome icons in your Swift project? Importing new font requires adding a property into `info.plist`, but the most annoying part is to match the correct Unicode code point with a symbol in the font file. We would have to know that `symbol` is encoded to `f042` hexadecimal number. It is quite challenging and cumbersome to know all hexadecimal numbers. Not to mention, the result would look like this:
@@ -838,6 +857,8 @@ label.setFAText(prefixText: "prefix ", icon: .FATwitter, postfixText: " prefix",
 ```
 
 Have you noticed the adjusting size of text and icon in one string? `NSAttributedStrings` is the core that runs Font Awesome Swift library behind the scenes.
+
+[Back to table content](https://github.com/ngominhtrint/swiftbestpractice#table-content)
 
 ## Why access control matters?
 
@@ -866,6 +887,8 @@ The code above doesn’t make sense. It’s great that we revealed `myVariable` 
 In general, all classes which are not marked as public, can’t be seen by other modules, and testing targets belong to different modules as well. Just imagine the disaster when everything has to be marked as public for unit tests. Keep in mind, this was a reality before Swift 2.0. Now, Swift provides an attribute `@testable` to avoid this behavior.
 
 Attribute `@testable import MyProject` will unveil internal properties and methods in unit test classes. Just remember those private properties won’t be visible from outside to other modules. If you need to have access to private properties, consider to decouple a code or think about the architecture of code. It’s a sign that your code isn’t designed for testing. The test driven development would point out this problem much sooner.
+
+[Back to table content](https://github.com/ngominhtrint/swiftbestpractice#table-content)
 
 ## How to leverage Swift to match enums?
 
@@ -923,4 +946,5 @@ if case .Chair(amount: _) = myStuff {
 }
 ```
 
+[Back to table content](https://github.com/ngominhtrint/swiftbestpractice#table-content)
 
