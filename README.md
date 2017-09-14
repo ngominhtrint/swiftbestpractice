@@ -2,6 +2,22 @@
 
 Check out the [Toptal](https://www.toptal.com/swift/tips-and-practices) resource pages for additional information
 
+## Table content:
+1. [How to hide long UIViewController loading syntax from the UIStoryboard](https://github.com/ngominhtrint/swiftbestpractice#how-to-hide-long-uiviewcontroller-loading-syntax-from-the-uistoryboard)
+2. [How to hide long UIView loading syntax from the UINib](https://github.com/ngominhtrint/swiftbestpractice#how-to-hide-long-uiview-loading-syntax-from-the-uinib)
+3. [Use extensions to better organize your code](https://github.com/ngominhtrint/swiftbestpractice#use-extensions-to-better-organize-your-code)
+4. [Consider using the GUARD statement to check for required conditions](https://github.com/ngominhtrint/swiftbestpractice#consider-using-the-guard-statement-to-check-for-required-conditions)
+5. [How to properly use NSDateFormatter?](https://github.com/ngominhtrint/swiftbestpractice#how-to-properly-use-nsdateformatter)
+6. [How to avoid scope in Closure?](https://github.com/ngominhtrint/swiftbestpractice#how-to-avoid-scope-in-closure)
+7. [How to use protocol extensions to bind model classes with interfaces?](https://github.com/ngominhtrint/swiftbestpractice#how-to-use-protocol-extensions-to-bind-model-classes-with-interfaces)
+8. [How to force highlight TODO and FIXME in Swift?](https://github.com/ngominhtrint/swiftbestpractice#how-to-force-highlight-todo-and-fixme-in-swift)
+9. [How to create protocols with optional methods or properties?](https://github.com/ngominhtrint/swiftbestpractice#how-to-create-protocols-with-optional-methods-or-properties)
+10. [How to avoid a retain cycle?](https://github.com/ngominhtrint/swiftbestpractice#how-to-avoid-a-retain-cycle)
+11. [How to use font awesome in Swift?](https://github.com/ngominhtrint/swiftbestpractice#how-to-use-font-awesome-in-swift)
+12. [Why access control matters?](https://github.com/ngominhtrint/swiftbestpractice#why-access-control-matters)
+13. [How to leverage Swift to match enums?](https://github.com/ngominhtrint/swiftbestpractice#how-to-leverage-swift-to-match-enums)
+
+
 ## How to hide long UIViewController loading syntax from the UIStoryboard
 
 If you are using storyboards for building your screens, and want to instantiate `UIViewController` from within your code, you have probably used syntax similar to this:
